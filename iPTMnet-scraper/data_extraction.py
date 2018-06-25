@@ -38,6 +38,8 @@ with open('Extracted Data/PTMdata.csv', 'w') as csvfile1, open('Extracted Data/E
     for i in df['IDs']:
         #dictionary to store data for each iPTMnet ID
         data[i] = {}
+        flag = 0
+        flag_e = 0
 
         #specify the url
         url = "https://research.bioinformatics.udel.edu/iptmnet/entry/" + str(i)
@@ -67,9 +69,19 @@ with open('Extracted Data/PTMdata.csv', 'w') as csvfile1, open('Extracted Data/E
                 data[i][PTMtype].append(PTMsite)
             else:
                 data[i][PTMtype] = [PTMsite]
-            datawriter2.writerow([i, PTMsite, PTMtype, enzyme])
 
-        #write to CSV file
+            #write enzyme data to CSV file
+            if flag_e == 0:
+                datawriter2.writerow([i, PTMsite, PTMtype, enzyme])
+                flag_e = 1
+            else:
+                datawriter2.writerow(["", PTMsite, PTMtype, enzyme])
+
+        #write PTM data to CSV file
         for k, v in data[i].items():
-            datawriter1.writerow([i, k, display_sites(v)])
+            if flag==0:
+                datawriter1.writerow([i, k, display_sites(v)])
+                flag = 1
+            else:
+                datawriter1.writerow(["", k, display_sites(v)])
         print(i)

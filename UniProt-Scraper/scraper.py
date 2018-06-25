@@ -8,7 +8,7 @@ from urllib.request import urlopen
 
 #display list
 def display_list(arr):
-    return "; ".join(arr)
+    return ";\n".join(arr)
 
 #get UniProt Protein IDs
 input_file = "ProteinIDs_test.csv"
@@ -17,7 +17,8 @@ df = pd.read_csv(input_file)
 #Get molecular functions
 with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
     datawriter = csv.writer(csvfile, delimiter=',')
-    header =    [  "Protein ID",
+    header =    [  "Protein ID", "Gene ID",
+                    "No. of Perfect hits", "No. of Imperfect hits",
                     "Molecular Function-GO Annot","Molecular Function-Keyword",
                     "Biological processes-GO Annot","Biological processes-Keywords",
                     "Cellular Component-Go Annot", "Cellular Component-Keywords",
@@ -27,8 +28,12 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
     datawriter.writerow(header)
 
     for i in df['IDs']:
-
         print(i)
+        pid = i
+        gid = ""
+        no_p_hits = ""
+        no_i_hits = ""
+
         #arrays for data collection
         molecular_function_go = []
         molecular_function_kw = []
@@ -93,4 +98,4 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
                 biological_process_kw = val
 
         #write data to CSV file
-        datawriter.writerow([i, display_list(molecular_function_go), display_list(molecular_function_kw), display_list(biological_process_go), display_list(biological_process_kw), display_list(cellular_component_go)])
+        datawriter.writerow([pid, gid, no_p_hits, no_i_hits, display_list(molecular_function_go), display_list(molecular_function_kw), display_list(biological_process_go), display_list(biological_process_kw), display_list(cellular_component_go)])
