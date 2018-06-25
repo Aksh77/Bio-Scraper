@@ -1,6 +1,7 @@
 import csv
 import pandas as pd
 from bs4 import BeautifulSoup
+import re
 #import pprint
 import urllib
 from urllib.request import urlopen
@@ -68,8 +69,15 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
             for data2 in data1:
                 data3 = data2.findAll('li')
                 for data4 in data3:
-                    cells = data4.find(lambda tag: tag.name == "a" and (tag.has_attr("href")) and (not tag.has_attr("rel")))
-                    print(cells)
+                    print(data4.find(text=True))
+                    cells = data4.findAll(lambda tag: tag.name == "a" and (tag.has_attr("href")))
+                    for cell in cells:
+                        c = str(cell)
+                        '''
+                        if(c.find("locations") != -1):
+                            print(cell)
+                            #print(cell.find(text=True))
+                        '''
 
         #Keywords - Molecular Function and Biological processes
         ext_data = bsf.find('table', class_='databaseTable')
