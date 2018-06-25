@@ -2,7 +2,7 @@ import csv
 import pandas as pd
 import numpy as np
 
-input_file = "PTMdata.csv"
+input_file = "Extracted Data/PTMdata.csv"
 df = pd.read_csv(input_file)
 
 residues = ['A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','Y']
