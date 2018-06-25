@@ -63,15 +63,13 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
 
         #Cellular Component GO Annotation
         ext_data = bsf.find('ul', class_='noNumbering subcellLocations')
-        for data in ext_data:
-            print(data)
-            '''
-            cells = data.find(lambda tag: tag.name == "a")
-            if(not(cells is None)):
-                cells = cells.find(text=True).strip()
-                cellular_component_go.append(cells)
-        print(cellular_component_go)
-        '''
+        for data in ext_data.findAll('li'):
+            data1 = data.findAll('ul')
+            for data2 in data1:
+                data3 = data2.findAll('li')
+                for data4 in data3:
+                    cells = data4.find(lambda tag: tag.name == "a" and (tag.has_attr("href")) and (not tag.has_attr("rel")))
+                    print(cells)
 
         #Keywords - Molecular Function and Biological processes
         ext_data = bsf.find('table', class_='databaseTable')
