@@ -3,13 +3,19 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import re
 import pprint
-from lxml import etree, html
 import urllib
 from urllib.request import urlopen
 
 #display list
 def display_list(arr):
     return ";\n".join(arr)
+
+#get data
+def fetchdata(url):
+    try:
+        return urlopen(url)
+    except:
+        fetchdata(url)
 
 #get UniProt Protein IDs
 input_file = "ProteinIDs_test.csv"
@@ -35,7 +41,7 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
         url = "http://www.uniprot.org/uniprot/" + str(i)
 
         #Query the website
-        page = urlopen(url)
+        page = fetchdata(url)
 
         #Parse the html, store it in Beautiful Soup format
         bsf = BeautifulSoup(page, "lxml")
@@ -104,6 +110,14 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
 
         #cellular Component Keywords
         cellular_component_kw = []
+        ext_data = bsf.find('div', class_='section ', id="subcellular_location")
+        header = ext_data.find('h4')
+        head_data = header.findAll(text=True)
+        if 'Keywords - Cellular component' in head_data:
+            data = header.next_sibling
+            val = data.findAll(text=True)
+            val = list(filter(lambda x : x != ', ', val))
+            cellular_component_kw = val
 
         #Keywords - Molecular Function and Biological processes
         molecular_function_kw = []
