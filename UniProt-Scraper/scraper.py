@@ -156,10 +156,25 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
                 disease_kw = val
                 break
 
+        #Technical Terms - Keywords
+        tech_term_kw = []
+        ext_data = bsf.find('div', class_='section', id='miscellaneous')
+        heads = ext_data.findAll('h4')
+        for head in heads:
+            data = head.findAll(text=True)
+            if 'Keywords - Technical term' in data:
+                j = data.index('Keywords - Technical term')
+                val = data[j].parent.parent
+                cells = val.next_sibling.findAll(text=True)
+                val = list(filter(lambda x : x != ', ', cells))
+                tech_term_kw = val
+                break
+
         #write data to CSV file
         datawriter.writerow([pid, gid, ccds, biogrid,
                             display_list(molecular_function_go), display_list(molecular_function_kw),
                             display_list(biological_process_go), display_list(biological_process_kw),
                             display_list(cellular_component_go), display_list(cellular_component_kw),
                             display_list(disease_omim_id), display_list(disease_kw),
+                            display_list(tech_term_kw),
                             ])
