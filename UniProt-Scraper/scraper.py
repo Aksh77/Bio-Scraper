@@ -170,11 +170,22 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
                 tech_term_kw = val
                 break
 
+        #Polymorphism
+        polymorphism = ""
+        ext_data = bsf.find('div', class_='section', id='sequences')
+        heads = ext_data.findAll('h4')
+        for head in heads:
+            data = head.findAll(text=True)
+            if 'Polymorphism' in data:
+                j = data.index('Polymorphism')
+                val = data[j].parent.parent
+                polymorphism = val.next_sibling.find(text=True)
+                break
+
         #write data to CSV file
         datawriter.writerow([pid, gid, ccds, biogrid,
                             display_list(molecular_function_go), display_list(molecular_function_kw),
                             display_list(biological_process_go), display_list(biological_process_kw),
                             display_list(cellular_component_go), display_list(cellular_component_kw),
                             display_list(disease_omim_id), display_list(disease_kw),
-                            display_list(tech_term_kw),
-                            ])
+                            display_list(tech_term_kw), polymorphism])
