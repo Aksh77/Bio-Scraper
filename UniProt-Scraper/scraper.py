@@ -10,7 +10,7 @@ from urllib.request import urlopen
 def display_list(arr):
     return ";\n".join(arr)
 
-#get data
+#get data; handle error
 def fetchdata(url):
     try:
         return urlopen(url)
@@ -39,10 +39,8 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
 
         #specify the url
         url = "http://www.uniprot.org/uniprot/" + str(i)
-
         #Query the website
         page = fetchdata(url)
-
         #Parse the html, store it in Beautiful Soup format
         bsf = BeautifulSoup(page, "lxml")
 
@@ -93,19 +91,15 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
         '''
         ext_data = bsf.find('ul', class_='noNumbering subcellLocations')
         for data in ext_data.findAll('li'):
-            print(etree.tostring(data, encoding='unicode', pretty_print=True))
-            data1 = data.findAll('ul', class_="noNumbering")
-            for data2 in data1:
-                print(data2.find(text=True))
-                data3 = data2.findAll('li')
-                for data4 in data3:
-                    #print(data4.find(text=True))
-                    cells = data4.findAll(lambda tag: tag.name == "a" and (tag.has_attr("href")))
-                    for cell in cells:
-                        c = str(cell)
-                        if(c.find("locations") != -1):
-                            print(cell)
-                            #print(cell.find(text=True))
+            head = data.find('h6')
+            if(not(head is None)):
+                data1 = head.next_sibling
+                val = data1.findAll('li')
+                if(not(val is None)):
+                    for cell in val:
+                        val = cell.find(text=True)
+                        if val[:4]!="Ref.":
+                            cellular_component_go.append(val)
         '''
 
         #cellular Component Keywords
@@ -134,9 +128,38 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
             if(head=="Biological process"):
                 biological_process_kw = val
 
+        #Disease OMIM ID
+        disease_omim_id = []
+        ids = []
+        ext_data = bsf.findAll('div', class_='diseaseAnnotation')
+        for data in ext_data:
+            val = data.findAll('a')
+            for data1 in val:
+                data2 = data.findAll(text=True)
+                for j in data2:
+                    if j[:8]=="See also":
+                        ids.append(j[14:])
+        ids = set(ids)
+        disease_omim_id = list(ids)
+
+        #Disease Keywords
+        disease_kw = []
+        ext_data = bsf.find('div', class_='section', id='pathology_and_biotech')
+        heads = ext_data.findAll('h4')
+        for head in heads:
+            data = head.findAll(text=True)
+            if 'Keywords - Disease' in data:
+                j = data.index('Keywords - Disease')
+                val = data[j].parent.parent
+                cells = val.next_sibling.findAll(text=True)
+                val = list(filter(lambda x : x != ', ', cells))
+                disease_kw = val
+                break
+
         #write data to CSV file
         datawriter.writerow([pid, gid, ccds, biogrid,
                             display_list(molecular_function_go), display_list(molecular_function_kw),
                             display_list(biological_process_go), display_list(biological_process_kw),
                             display_list(cellular_component_go), display_list(cellular_component_kw),
+                            display_list(disease_omim_id), display_list(disease_kw),
                             ])
