@@ -22,16 +22,24 @@ input_file = "ProteinIDs_test.csv"
 df = pd.read_csv(input_file)
 
 #Get molecular functions
-with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
-    datawriter = csv.writer(csvfile, delimiter=',')
-    header =    [  "Protein ID", "Gene ID", "CCDS ID", "BioGrid ID",
+with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted Data/Comp_bias.csv', 'w') as csvfile2:
+
+    #Write header row for Protein_data file
+    datawriter1 = csv.writer(csvfile1, delimiter=',')
+    header1 =    [  "Protein ID", "Gene ID", "CCDS ID", "BioGrid ID",
                     "Molecular Function-GO Annot","Molecular Function-Keyword",
                     "Biological processes-GO Annot","Biological processes-Keywords",
                     "Cellular Component-Go Annot", "Cellular Component-Keywords",
                     "Disease-OMIM ID", "Disease-Keywords",
-                    "Technical Terms-Keywords", "Polymorphism"
-                ]
-    datawriter.writerow(header)
+                    "Technical Terms-Keywords", "Polymorphism" ]
+    datawriter1.writerow(header1)
+
+    #Write header row for Comp_bias file
+    datawriter2 = csv.writer(csvfile2, delimiter=',')
+    header2 =    [  "Protein ID",
+                    "Poly Repeats-Position", "Poly Repeats-Amino Acids", "Poly Repeats-Length",
+                    "Rich Domain-Position", "Rich Domain-Amino Acid" ]
+    datawriter2.writerow(header2)
 
     for i in df['IDs']:
         print(i)
@@ -182,8 +190,55 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile:
                 polymorphism = val.next_sibling.find(text=True)
                 break
 
-        #write data to CSV file
-        datawriter.writerow([pid, gid, ccds, biogrid,
+        #get compositional bias data
+        poly = []
+        rich = []
+        ext_data = bsf.find('table', class_='featureTable', id="Compositional_bias_section")
+        if(not(ext_data is None)):
+            for row in ext_data.findAll('tr'):
+                num = row.findAll('td', class_='numeric')
+                if(len(num)>0):
+                    pos = num[0].find(text=True)
+                    pos = '-'.join(pos.split('\xa0–\xa0'))
+                    length = num[1].find(text=True)
+                    desc = row.findAll('td', class_='featdescription')
+                    comp_desc = desc[0].find(text=True)
+                    if(comp_desc[:4])=='Poly':
+                        poly.append([pos, comp_desc[5:], length])
+                    else:
+                        rich.append([pos, comp_desc[:-5]])
+
+        #write data to Comp_bias CSV file
+        flag = 0
+        p = len(poly)
+        r = len(rich)
+        l = max(p, r)
+        while(True):
+            if(i<p and j<r):
+                poly_row = poly[i]
+                rich_row = rich[j]
+            elif(i<p and j>=r):
+                poly_row = poly[i]
+                rich_row = ['', '']
+            elif(i>=p and j<r):
+                poly_row = ['', '', '']
+                rich_row = rich[j]
+            else:
+                if flag==0:
+                    poly_row = ['', '', '']
+                    rich_row = ['', '']
+                    datawriter2.writerow([pid, poly_row[0], poly_row[1], poly_row[2], rich_row[0], rich_row[1]])
+                break
+            i += 1
+            j += 1
+            if (flag==0):
+                datawriter2.writerow([pid, poly_row[0], poly_row[1], poly_row[2], rich_row[0], rich_row[1]])
+                flag = 1
+            else:
+                datawriter2.writerow(['', poly_row[0], poly_row[1], poly_row[2], rich_row[0], rich_row[1]])
+
+        #write data to Protein_data CSV file
+        datawriter1.writerow([pid, gid, ccds, biogrid,
                             display_list(molecular_function_go), display_list(molecular_function_kw),
                             display_list(biological_process_go), display_list(biological_process_kw),
                             display_list(cellular_component_go), display_list(cellular_component_kw),

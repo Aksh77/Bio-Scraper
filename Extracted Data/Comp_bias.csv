@@ -1,0 +1,16 @@
+Protein ID,Poly Repeats-Position,Poly Repeats-Amino Acids,Poly Repeats-Length,Rich Domain-Position,Rich Domain-Amino Acid
+P42858,63-78,Pro,16,,
+,1437-1440,Thr,4,,
+,2341-2345,Glu,5,,
+,2638-2643,Glu,6,,
+P54253,,,,,
+Q86XK2,,,,,
+O15265,30-39,Gln,10,40-65,Pro
+,40-45,Pro,6,171-219,Ser
+,51-55,Pro,5,402-486,Pro
+,171-174,Ser,4,640-851,Ser
+,213-219,Ser,7,,
+,647-654,Ser,8,,
+,717-730,Ser,14,,
+,840-845,Ser,6,,
+Q9HBL0,,,,1069-1160,Ser
