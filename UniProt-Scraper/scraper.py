@@ -22,7 +22,7 @@ input_file = "ProteinIDs_test.csv"
 df = pd.read_csv(input_file)
 
 #Get molecular functions
-with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted Data/Comp_bias.csv', 'w') as csvfile2:
+with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted Data/Comp_bias.csv', 'w') as csvfile2, open('Extracted Data/Secondary_structures.csv', 'w') as csvfile3, open('Extracted Data/3D_structures.csv', 'w') as csvfile4:
 
     #Write header row for Protein_data file
     datawriter1 = csv.writer(csvfile1, delimiter=',')
@@ -40,6 +40,20 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
                     "Poly Repeats-Position", "Poly Repeats-Amino Acids", "Poly Repeats-Length",
                     "Rich Domain-Position", "Rich Domain-Amino Acid" ]
     datawriter2.writerow(header2)
+
+    #Write header row for Secondary structure
+    datawriter3 = csv.writer(csvfile3, delimiter=',')
+    header3 = ["Protein ID", "Turns", "Beta-Strands", "Helixes"]
+    datawriter3.writerow(header3)
+
+    #Write header row for 3D structure
+    datawriter4 = csv.writer(csvfile4, delimiter=',')
+    header4 = ["Protein ID",
+                "X-Ray PDB ID", "X-Ray Resolution", "X-Ray Position",
+                "NMR PDB ID", "NMR Resolution", "NMR Position"]
+    datawriter4.writerow(header4)
+
+#***********************extract data for each protein ID********************************************
 
     for i in df['IDs']:
         print(i)
@@ -208,8 +222,67 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
                     else:
                         rich.append([pos, comp_desc[:-5]])
 
+        #get Secondary structures data
+        helix = []
+        beta_strand = []
+        turn = []
+
+        ext_data = bsf.find('table', class_='featureTable', id="secstructure_section")
+        if(not(ext_data is None)):
+            for row in ext_data.findAll('tr'):
+                cols = row.findAll('td')
+                if len(cols)>0:
+                    desc = cols[0].findAll(text=True)
+                    desc = desc[1]
+                    pos = cols[1].find(text=True)
+                    if desc == 'Helix':
+                        helix.append(pos)
+                    elif desc == 'Beta strand':
+                        beta_strand.append(pos)
+                    elif desc == 'Turn':
+                        turn.append(pos)
+        helixes = '\n'.join(helix)
+        beta_strands = '\n'.join(beta_strand)
+        turns = '\n'.join(turn)
+
+        #get 3D structures data
+        x_id = []
+        x_res = []
+        x_pos = []
+        n_id = []
+        n_res = []
+        n_pos = []
+        ext_data = bsf.find('table', class_='databaseTable STRUCTURE')
+        for row in ext_data.findAll('tr'):
+            data = row.findAll(text=True)
+            if 'X-ray' in data:
+                x_id.append(data[0])
+                x_res.append(data[2])
+                x_pos.append(data[4])
+            elif 'NMR' in data:
+                n_id.append(data[0])
+                n_res.append(data[2])
+                n_pos.append(data[4])
+        xid = '\n'.join(x_id)
+        xres = '\n'.join(x_res)
+        xpos = '\n'.join(x_pos)
+        nid = '\n'.join(n_id)
+        nres = '\n'.join(n_res)
+        npos = '\n'.join(n_pos)
+
+#***************************Write extracted data to CSV files**********************************
+        #write data to Protein_data CSV file
+        datawriter1.writerow([pid, gid, ccds, biogrid,
+                            display_list(molecular_function_go), display_list(molecular_function_kw),
+                            display_list(biological_process_go), display_list(biological_process_kw),
+                            display_list(cellular_component_go), display_list(cellular_component_kw),
+                            display_list(disease_omim_id), display_list(disease_kw),
+                            display_list(tech_term_kw), polymorphism])
+
         #write data to Comp_bias CSV file
         flag = 0
+        i = 0
+        j = 0
         p = len(poly)
         r = len(rich)
         l = max(p, r)
@@ -237,10 +310,41 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
             else:
                 datawriter2.writerow(['', poly_row[0], poly_row[1], poly_row[2], rich_row[0], rich_row[1]])
 
-        #write data to Protein_data CSV file
-        datawriter1.writerow([pid, gid, ccds, biogrid,
-                            display_list(molecular_function_go), display_list(molecular_function_kw),
-                            display_list(biological_process_go), display_list(biological_process_kw),
-                            display_list(cellular_component_go), display_list(cellular_component_kw),
-                            display_list(disease_omim_id), display_list(disease_kw),
-                            display_list(tech_term_kw), polymorphism])
+        #write data to Secondary_structures CSV file
+        datawriter3.writerow([pid, turns, beta_strands, helixes])
+
+        #write data to 3D structures CSV file
+        datawriter4.writerow([pid, xid, xres, xpos, nid, nres, npos])
+
+        '''
+        #write data to 3D structure CSV file
+        flag = 0
+        i = 0
+        j = 0
+        x = len(xray)
+        n = len(nmr)
+        l = max(x, n)
+        while(True):
+            if(i<x and j<n):
+                xray_row = xray[i]
+                nmr_row = nmr[j]
+            elif(i<x and j>=n):
+                xray_row = xray[i]
+                nmr_row = ['', '', '']
+            elif(i>=x and j<n):
+                xray_row = ['', '', '']
+                nmr_row = nmr[j]
+            else:
+                if flag==0:
+                    xray_row = ['', '', '']
+                    nmr_row = ['', '', '']
+                    datawriter4.writerow([pid, xray_row[0], xray_row[1], xray_row[2], nmr_row[0], nmr_row[1], nmr_row[2]])
+                break
+            i += 1
+            j += 1
+            if (flag==0):
+                datawriter4.writerow([pid, xray_row[0], xray_row[1], xray_row[2], nmr_row[0], nmr_row[1], nmr_row[2]])
+                flag = 1
+            else:
+                datawriter4.writerow(['', xray_row[0], xray_row[1], xray_row[2], nmr_row[0], nmr_row[1], nmr_row[2]])
+        '''
