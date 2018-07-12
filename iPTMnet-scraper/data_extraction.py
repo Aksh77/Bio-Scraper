@@ -26,11 +26,11 @@ def display_sites(arr):
     return data
 
 #get iPTMnet IDs for querying
-input_file = "ProteinIDs_test.csv"
+input_file = "iPTMnet-scraper/ProteinIDs.csv"
 df = pd.read_csv(input_file)
 data = {}
 
-with open('Extracted Data/PTMdata.csv', 'w') as csvfile1, open('Extracted Data/Enzymedata.csv', 'w') as csvfile2:
+with open('iPTMnet-scraper/Extracted Data/PTMdata.csv', 'w') as csvfile1, open('iPTMnet-scraper/Extracted Data/Enzymedata.csv', 'w') as csvfile2:
     datawriter1 = csv.writer(csvfile1, delimiter=',')
     datawriter1.writerow(["Protein ID", "PTM Type", "PTM Site"])
     datawriter2 = csv.writer(csvfile2, delimiter=',')

@@ -18,11 +18,12 @@ def fetchdata(url):
         fetchdata(url)
 
 #get UniProt Protein IDs
-input_file = "ProteinIDs_test.csv"
+input_file = "UniProt-Scraper/ProteinIDs.csv"
 df = pd.read_csv(input_file)
+IDs = df['IDs']
 
 #Get molecular functions
-with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted Data/Comp_bias.csv', 'w') as csvfile2, open('Extracted Data/Secondary_structures.csv', 'w') as csvfile3, open('Extracted Data/3D_structures.csv', 'w') as csvfile4:
+with open('UniProt-Scraper/Extracted Data/Protein_data.csv', 'w') as csvfile1, open('UniProt-Scraper/Extracted Data/Comp_bias.csv', 'w') as csvfile2, open('UniProt-Scraper/Extracted Data/Secondary_structures.csv', 'w') as csvfile3, open('UniProt-Scraper/Extracted Data/3D_structures.csv', 'w') as csvfile4:
 
     #Write header row for Protein_data file
     datawriter1 = csv.writer(csvfile1, delimiter=',')
@@ -54,9 +55,11 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
     datawriter4.writerow(header4)
 
 #***********************extract data for each protein ID********************************************
+    countdown = len(IDs) #Because I am impatient!
+    for i in IDs:
 
-    for i in df['IDs']:
-        print(i)
+        countdown -= 1
+        print(countdown, i)
         pid = i
 
         #specify the url
@@ -69,134 +72,173 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
         #get Gene ID
         gid = ""
         ext_data = bsf.find('table', class_='databaseTable GENOME')
-        data = ext_data.findAll(text=True)
-        if "GeneID" in data:
-            i = data.index("GeneID")
-            gid = data[i+2]
+        if(not (ext_data is None)):
+            data = ext_data.findAll(text=True)
+            if "GeneID" in data:
+                i = data.index("GeneID")
+                gid = data[i+2]
 
         #get CCDS ID
         ccds = ""
         ext_data = bsf.find('table', class_='databaseTable SEQUENCE')
-        data = ext_data.findAll(text=True)
-        if "CCDS" in data:
-            i = data.index("CCDS")
-            ccds = data[i+2]
+        if(not (ext_data is None)):
+            data = ext_data.findAll(text=True)
+            if "CCDS" in data:
+                i = data.index("CCDS")
+                ccds = data[i+2]
 
         #get BioGrid ID
         biogrid = ""
         ext_data = bsf.find('table', class_='databaseTable INTERACTION')
-        data = ext_data.findAll(text=True)
-        if "BioGrid" in data:
-            i = data.index("BioGrid")
-            biogrid = data[i+2]
+        if(not (ext_data is None)):
+            data = ext_data.findAll(text=True)
+            if "BioGrid" in data:
+                i = data.index("BioGrid")
+                biogrid = data[i+2]
 
         #Molecular Function GO Annotation
         molecular_function_go = []
         ext_data = bsf.find('ul', class_='noNumbering molecular_function')
-        for data in ext_data.findAll('li'):
-            cells = data.find(lambda tag: tag.name == "a" and (tag.has_attr("onclick")))
-            if(not(cells is None)):
-                cells = cells.find(text=True).strip()
-                molecular_function_go.append(cells)
+        if(not (ext_data is None)):
+            for data in ext_data.findAll('li'):
+                cells = data.find(lambda tag: tag.name == "a" and (tag.has_attr("onclick")))
+                if(not(cells is None)):
+                    cells = cells.find(text=True).strip()
+                    molecular_function_go.append(cells)
 
         #Biological Processes GO Annotation
         biological_process_go = []
         ext_data = bsf.find('ul', class_='noNumbering biological_process')
-        for data in ext_data.findAll('li'):
-            cells = data.find(lambda tag: tag.name == "a" and (tag.has_attr("onclick")))
-            if(not(cells is None)):
-                cells = cells.find(text=True).strip()
-                biological_process_go.append(cells)
+        if(not (ext_data is None)):
+            for data in ext_data.findAll('li'):
+                cells = data.find(lambda tag: tag.name == "a" and (tag.has_attr("onclick")))
+                if(not(cells is None)):
+                    cells = cells.find(text=True).strip()
+                    biological_process_go.append(cells)
 
         #Cellular Component GO Annotation
         cellular_component_go = []
         ext_data = bsf.find('div', id='table-go_annotation')
-        lt = ext_data.find('ul', class_='noNumbering subcellLocations')
-        for li in lt.findAll('li'):
-            cell = li.find('h6')
-            if(not(cell is None)):
-                cell_loc = cell.find(text=True)
-                cellular_component_go.append(cell_loc)
+        if(not (ext_data is None)):
+            lt = ext_data.find('ul', class_='noNumbering subcellLocations')
+            for li in lt.findAll('li'):
+                cell = li.find('h6')
+                if(not(cell is None)):
+                    cell_loc = cell.find(text=True)
+                    cellular_component_go.append(cell_loc)
 
         #cellular Component Keywords
         cellular_component_kw = []
         ext_data = bsf.find('div', class_='section ', id="subcellular_location")
-        header = ext_data.find('h4')
-        head_data = header.findAll(text=True)
-        if 'Keywords - Cellular component' in head_data:
-            data = header.next_sibling
-            val = data.findAll(text=True)
-            val = list(filter(lambda x : x != ', ', val))
-            cellular_component_kw = val
+        if(not (ext_data is None)):
+            header = ext_data.find('h4')
+            if(not (header is None)):
+                head_data = header.findAll(text=True)
+                if 'Keywords - Cellular component' in head_data:
+                    data = header.next_sibling
+                    vals = data.findAll('a')
+                    val = [v.find(text=True) for v in vals]
+                    v = list(filter(lambda x : x != ', ', vals))
+                    val = []
+                    for kw in v:
+                        kws = str(kw)
+                        if kws[:18]=='<a href="/keywords':
+                            val.append(kw.find(text=True))
+                    cellular_component_kw = val
 
         #Keywords - Molecular Function and Biological processes
         molecular_function_kw = []
         biological_process_kw = []
         ext_data = bsf.find('table', class_='databaseTable')
-        ext_data = ext_data.findAll('tr')
-        for row in ext_data:
-            data = row.findAll('td')
-            head = data[0].find(text=True)
-            val = data[1].findAll(text=True)
-            val = list(filter(lambda x : x != ', ', val))
-            if(head=="Molecular function"):
-                molecular_function_kw = val
-            if(head=="Biological process"):
-                biological_process_kw = val
+        if(not (ext_data is None)):
+            ext_data = ext_data.findAll('tr')
+            for row in ext_data:
+                data = row.findAll('td')
+                head = data[0].find(text=True)
+                vals = data[1].findAll('a')
+                val = [v.find(text=True) for v in vals]
+                v = list(filter(lambda x : x != ', ', vals))
+                val = []
+                for kw in v:
+                    kws = str(kw)
+                    if kws[:18]=='<a href="/keywords':
+                        val.append(kw.find(text=True))
+                if(head=="Molecular function"):
+                    molecular_function_kw = val
+                if(head=="Biological process"):
+                    biological_process_kw = val
 
         #Disease OMIM ID
         disease_omim_id = []
         ids = []
         ext_data = bsf.findAll('div', class_='diseaseAnnotation')
-        for data in ext_data:
-            val = data.findAll('a')
-            for data1 in val:
-                data2 = data.findAll(text=True)
-                for j in data2:
-                    if j[:8]=="See also":
-                        ids.append(j[14:])
+        if(not (ext_data is None)):
+            for data in ext_data:
+                val = data.findAll('a')
+                for data1 in val:
+                    data2 = data.findAll(text=True)
+                    for j in data2:
+                        if j[:8]=="See also":
+                            ids.append(j[14:])
         ids = set(ids)
         disease_omim_id = list(ids)
 
         #Disease Keywords
         disease_kw = []
         ext_data = bsf.find('div', class_='section', id='pathology_and_biotech')
-        heads = ext_data.findAll('h4')
-        for head in heads:
-            data = head.findAll(text=True)
-            if 'Keywords - Disease' in data:
-                j = data.index('Keywords - Disease')
-                val = data[j].parent.parent
-                cells = val.next_sibling.findAll(text=True)
-                val = list(filter(lambda x : x != ', ', cells))
-                disease_kw = val
-                break
+        if(not (ext_data is None)):
+            heads = ext_data.findAll('h4')
+            for head in heads:
+                data = head.findAll(text=True)
+                if 'Keywords - Disease' in data:
+                    j = data.index('Keywords - Disease')
+                    val = data[j].parent.parent
+                    cells = val.next_sibling
+                    vals = cells.findAll('a')
+                    val = [v.find(text=True) for v in vals]
+                    v = list(filter(lambda x : x != ', ', vals))
+                    val = []
+                    for kw in v:
+                        kws = str(kw)
+                        if kws[:18]=='<a href="/keywords':
+                            val.append(kw.find(text=True))
+                    disease_kw = val
+                    break
 
         #Technical Terms - Keywords
         tech_term_kw = []
         ext_data = bsf.find('div', class_='section', id='miscellaneous')
-        heads = ext_data.findAll('h4')
-        for head in heads:
-            data = head.findAll(text=True)
-            if 'Keywords - Technical term' in data:
-                j = data.index('Keywords - Technical term')
-                val = data[j].parent.parent
-                cells = val.next_sibling.findAll(text=True)
-                val = list(filter(lambda x : x != ', ', cells))
-                tech_term_kw = val
-                break
+        if(not (ext_data is None)):
+            heads = ext_data.findAll('h4')
+            for head in heads:
+                data = head.findAll(text=True)
+                if 'Keywords - Technical term' in data:
+                    j = data.index('Keywords - Technical term')
+                    val = data[j].parent.parent
+                    cells = val.next_sibling
+                    vals = cells.findAll('a')
+                    val = [v.find(text=True) for v in vals]
+                    v = list(filter(lambda x : x != ', ', vals))
+                    val = []
+                    for kw in v:
+                        kws = str(kw)
+                        if kws[:18]=='<a href="/keywords':
+                            val.append(kw.find(text=True))
+                    tech_term_kw = val
+                    break
 
         #Polymorphism
         polymorphism = ""
         ext_data = bsf.find('div', class_='section', id='sequences')
-        heads = ext_data.findAll('h4')
-        for head in heads:
-            data = head.findAll(text=True)
-            if 'Polymorphism' in data:
-                j = data.index('Polymorphism')
-                val = data[j].parent.parent
-                polymorphism = val.next_sibling.find(text=True)
-                break
+        if(not (ext_data is None)):
+            heads = ext_data.findAll('h4')
+            for head in heads:
+                data = head.findAll(text=True)
+                if 'Polymorphism' in data:
+                    j = data.index('Polymorphism')
+                    val = data[j].parent.parent
+                    polymorphism = val.next_sibling.find(text=True)
+                    break
 
         #get compositional bias data
         poly_pos = []
@@ -260,16 +302,17 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
         n_res = []
         n_pos = []
         ext_data = bsf.find('table', class_='databaseTable STRUCTURE')
-        for row in ext_data.findAll('tr'):
-            data = row.findAll(text=True)
-            if 'X-ray' in data:
-                x_id.append(data[0])
-                x_res.append(data[2])
-                x_pos.append(data[4])
-            elif 'NMR' in data:
-                n_id.append(data[0])
-                n_res.append(data[2])
-                n_pos.append(data[4])
+        if(not (ext_data is None)):
+            for row in ext_data.findAll('tr'):
+                data = row.findAll(text=True)
+                if 'X-ray' in data:
+                    x_id.append(data[0])
+                    x_res.append(data[2])
+                    x_pos.append(data[4])
+                elif 'NMR' in data:
+                    n_id.append(data[0])
+                    n_res.append(data[2])
+                    n_pos.append(data[4])
         xid = '\n'.join(x_id)
         xres = '\n'.join(x_res)
         xpos = '\n'.join(x_pos)
