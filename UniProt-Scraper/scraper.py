@@ -199,8 +199,11 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
                 break
 
         #get compositional bias data
-        poly = []
-        rich = []
+        poly_pos = []
+        poly_desc = []
+        poly_len = []
+        rich_pos = []
+        rich_desc = []
         ext_data = bsf.find('table', class_='featureTable', id="Compositional_bias_section")
         if(not(ext_data is None)):
             for row in ext_data.findAll('tr'):
@@ -212,9 +215,17 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
                     desc = row.findAll('td', class_='featdescription')
                     comp_desc = desc[0].find(text=True)
                     if(comp_desc[:4])=='Poly':
-                        poly.append([pos, comp_desc[5:], length])
+                        poly_pos.append(pos)
+                        poly_desc.append(comp_desc[5:])
+                        poly_len.append(length)
                     else:
-                        rich.append([pos, comp_desc[:-5]])
+                        rich_pos.append(pos)
+                        rich_desc.append(comp_desc[:-5])
+        polypos = '\n'.join(poly_pos)
+        polydesc = '\n'.join(poly_desc)
+        polylen = '\n'.join(poly_len)
+        richpos = '\n'.join(rich_pos)
+        richdesc = '\n'.join(rich_desc)
 
         #get Secondary structures data
         helix = []
@@ -229,6 +240,8 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
                     desc = cols[0].findAll(text=True)
                     desc = desc[1]
                     pos = cols[1].find(text=True)
+                    pos = re.findall(r'\d+', pos)
+                    pos = '-'.join(pos)
                     if desc == 'Helix':
                         helix.append(pos)
                     elif desc == 'Beta strand':
@@ -274,71 +287,10 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
                             display_list(tech_term_kw), polymorphism])
 
         #write data to Comp_bias CSV file
-        flag = 0
-        i = 0
-        j = 0
-        p = len(poly)
-        r = len(rich)
-        l = max(p, r)
-        while(True):
-            if(i<p and j<r):
-                poly_row = poly[i]
-                rich_row = rich[j]
-            elif(i<p and j>=r):
-                poly_row = poly[i]
-                rich_row = ['', '']
-            elif(i>=p and j<r):
-                poly_row = ['', '', '']
-                rich_row = rich[j]
-            else:
-                if flag==0:
-                    poly_row = ['', '', '']
-                    rich_row = ['', '']
-                    datawriter2.writerow([pid, poly_row[0], poly_row[1], poly_row[2], rich_row[0], rich_row[1]])
-                break
-            i += 1
-            j += 1
-            if (flag==0):
-                datawriter2.writerow([pid, poly_row[0], poly_row[1], poly_row[2], rich_row[0], rich_row[1]])
-                flag = 1
-            else:
-                datawriter2.writerow(['', poly_row[0], poly_row[1], poly_row[2], rich_row[0], rich_row[1]])
+        datawriter2.writerow([pid, polypos, polydesc, polylen, richpos, richdesc])
 
         #write data to Secondary_structures CSV file
         datawriter3.writerow([pid, turns, beta_strands, helixes])
 
         #write data to 3D structures CSV file
         datawriter4.writerow([pid, xid, xres, xpos, nid, nres, npos])
-
-        '''
-        #write data to 3D structure CSV file
-        flag = 0
-        i = 0
-        j = 0
-        x = len(xray)
-        n = len(nmr)
-        l = max(x, n)
-        while(True):
-            if(i<x and j<n):
-                xray_row = xray[i]
-                nmr_row = nmr[j]
-            elif(i<x and j>=n):
-                xray_row = xray[i]
-                nmr_row = ['', '', '']
-            elif(i>=x and j<n):
-                xray_row = ['', '', '']
-                nmr_row = nmr[j]
-            else:
-                if flag==0:
-                    xray_row = ['', '', '']
-                    nmr_row = ['', '', '']
-                    datawriter4.writerow([pid, xray_row[0], xray_row[1], xray_row[2], nmr_row[0], nmr_row[1], nmr_row[2]])
-                break
-            i += 1
-            j += 1
-            if (flag==0):
-                datawriter4.writerow([pid, xray_row[0], xray_row[1], xray_row[2], nmr_row[0], nmr_row[1], nmr_row[2]])
-                flag = 1
-            else:
-                datawriter4.writerow(['', xray_row[0], xray_row[1], xray_row[2], nmr_row[0], nmr_row[1], nmr_row[2]])
-        '''
