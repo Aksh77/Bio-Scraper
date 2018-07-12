@@ -110,19 +110,13 @@ with open('Extracted Data/Protein_data.csv', 'w') as csvfile1, open('Extracted D
 
         #Cellular Component GO Annotation
         cellular_component_go = []
-        '''
-        ext_data = bsf.find('ul', class_='noNumbering subcellLocations')
-        for data in ext_data.findAll('li'):
-            head = data.find('h6')
-            if(not(head is None)):
-                data1 = head.next_sibling
-                val = data1.findAll('li')
-                if(not(val is None)):
-                    for cell in val:
-                        val = cell.find(text=True)
-                        if val[:4]!="Ref.":
-                            cellular_component_go.append(val)
-        '''
+        ext_data = bsf.find('div', id='table-go_annotation')
+        lt = ext_data.find('ul', class_='noNumbering subcellLocations')
+        for li in lt.findAll('li'):
+            cell = li.find('h6')
+            if(not(cell is None)):
+                cell_loc = cell.find(text=True)
+                cellular_component_go.append(cell_loc)
 
         #cellular Component Keywords
         cellular_component_kw = []
